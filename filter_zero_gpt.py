@@ -10,37 +10,6 @@ import platform
 import subprocess
 import pyautogui as pag
 
-# auxillary copy and pasted to handle osx retina displaysCheck if it has Macbook Retina resolution (different by 2x)
-is_retina = False
-if platform.system() == "Darwin":
-    is_retina = subprocess.call("system_profiler SPDisplaysDataType | grep 'retina'", shell=True)
-
-# auxillary copy and pasted to handle osx retina displays
-def imagesearch(image, precision=0.8):
-    im = pag.screenshot()
-    if is_retina:
-        im.thumbnail((round(im.size[0] * 0.5), round(im.size[1] * 0.5)))
-    # im.save('testarea.png') useful for debugging purposes, this will save the captured region as "testarea.png"
-    img_rgb = np.array(im)
-    img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
-    template = cv2.imread(image, 0)
-    template.shape[::-1]
-
-    res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    if max_val < precision:
-        return [-1, -1]
-    return max_loc
-
-# auxillary copy and pasted to handle osx retina displays
-def imagesearch_loop(image, timesample, precision=0.8):
-    pos = imagesearch(image, precision)
-    while pos[0] == -1:
-        print(image + " not found, waiting")
-        time.sleep(timesample)
-        pos = imagesearch(image, precision)
-    return pos
-
 # evaluate text via zerogpt website using pyautogui
 def is_text_humanlike(prompt):
     # Make a request to ZeroGPT.com
@@ -58,7 +27,7 @@ def is_text_humanlike(prompt):
     time.sleep(1)
     
     # click on the 'enter' button
-    btn_loc = imagesearch_loop('./zero_gpt_submit_btn.png',1)
+    btn_loc = pag.locateOnScreen('./zero_gpt_submit_btn.png', confidence=.9)
     pag.moveTo((btn_loc[0]+ 50, btn_loc[1]+25), tween=pag.easeInQuad, duration=3)
     pag.click(clicks=2)
     time.sleep(1)
@@ -68,22 +37,12 @@ def is_text_humanlike(prompt):
     time.sleep(1)
     
     # Look for the result, if 0% then its good, else bad
-    tries = 1
-    found = False
-    zero_percent_gpt_txt_loc = imagesearch('./zero_gpt_zero_percent.png')
-
-    while zero_percent_gpt_txt_loc[0] == -1 and tries <= 10:
-        zero_percent_gpt_txt_loc = imagesearch('./zero_gpt_zero_percent.png') 
-        if zero_percent_gpt_txt_loc[0] == -1:
-            tries += 1 
-        else:
-            found = True
-            break
+    zero_percent_gpt_txt_loc = pag.locateOnScreen('./zero_gpt_zero_percent.png', confidence=.9, minSearchTime=5)
     
     # clean up window
     pag.hotkey("conntrol" + "w")
-    return found
-
+    
+    return zero_percent_gpt_txt_loc
 
 # command line arguments 
 #      - allows for single or multiple inputs to be evaluated.
