@@ -16,7 +16,7 @@ if platform.system() == "Darwin":
     is_retina = subprocess.call("system_profiler SPDisplaysDataType | grep 'retina'", shell=True)
 
 # auxillary copy and pasted to handle osx retina displays
-def imagesearch(image, precision=0.7):
+def imagesearch(image, precision=0.8):
     im = pag.screenshot()
     if is_retina:
         im.thumbnail((round(im.size[0] * 0.5), round(im.size[1] * 0.5)))
@@ -33,7 +33,7 @@ def imagesearch(image, precision=0.7):
     return max_loc
 
 # auxillary copy and pasted to handle osx retina displays
-def imagesearch_loop(image, timesample, precision=0.6):
+def imagesearch_loop(image, timesample, precision=0.8):
     pos = imagesearch(image, precision)
     while pos[0] == -1:
         print(image + " not found, waiting")
@@ -48,11 +48,8 @@ def is_text_humanlike(prompt):
     webbrowser.open_new(url)
     time.sleep(2)
     
-    # make browser fullscreen (osx)
-    pag.hotkey('command', 'option', 'f')
-    
     # click on text entry box
-    pag.moveTo((600,700), duration=2, tween=pag.easeInQuad)
+    pag.moveTo((529,628), duration=1, tween=pag.easeInQuad)
     pag.click(clicks=2)
     time.sleep(1)
     
@@ -61,22 +58,22 @@ def is_text_humanlike(prompt):
     time.sleep(1)
     
     # click on the 'enter' button
-    btn_loc = imagesearch_loop('./zero_gpt_btn.png',1)
+    btn_loc = imagesearch_loop('./zero_gpt_submit_btn.png',1)
     pag.moveTo((btn_loc[0]+ 50, btn_loc[1]+25), tween=pag.easeInQuad, duration=3)
     pag.click(clicks=2)
     time.sleep(1)
     
     # scroll to result
-    pag.scroll(-10)
+    pag.scroll(-5)
     time.sleep(1)
     
     # Look for the result, if 0% then its good, else bad
     tries = 1
     found = False
-    zero_percent_gpt_txt_loc = imagesearch('./zerogpt_pass.png')
+    zero_percent_gpt_txt_loc = imagesearch('./zero_gpt_zero_percent.png')
 
     while zero_percent_gpt_txt_loc[0] == -1 and tries <= 10:
-        zero_percent_gpt_txt_loc = imagesearch('./zero_percent_gpt.png') 
+        zero_percent_gpt_txt_loc = imagesearch('./zero_gpt_zero_percent.png') 
         if zero_percent_gpt_txt_loc[0] == -1:
             tries += 1 
         else:
@@ -84,7 +81,7 @@ def is_text_humanlike(prompt):
             break
     
     # clean up window
-    pag.hotkey("command" + "w")
+    pag.hotkey("conntrol" + "w")
     return found
 
 
@@ -133,10 +130,12 @@ with open(input_file, 'r') if input_file else open(input_string, 'r') as infile:
     
     # split on given delimiter    
     prompts = text.split(delimiter)
-    prompts = [p.strip() for p in prompts]
+    prompts = [p.strip() for p in prompts if p != '\n']
     
     # for each prompt, evaluate and record
     for i, p in enumerate(prompts[skip:]):
+        print(str(i) + "/" + str(len(prompts)) + "....")
+        print(p + '\n')
         if is_text_humanlike(p):
             with open(output_file, "a") as outfile_good:
                 outfile_good.write(p + '\n\n<END PROMPT>\n\n')
